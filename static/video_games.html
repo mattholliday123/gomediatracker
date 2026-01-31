@@ -13,21 +13,33 @@
   <body>
     <h1>Video Games</h1>
     <input type="text" id="search" placeholder="Search for Game..." />
+    <ul id="results"></ul>
+
+    <script>
+      const input = document.querySelector("input");
+      const resDisplay = document.getElementById("results");
+      input.addEventListener("keydown", async (event) => {
+        if (event.key === "Enter") {
+          try {
+            const response = await fetch(
+              `/searchgame?q=${encodeURIComponent(input.value)}`,
+            );
+            if (!response.ok)
+              throw new Error(`Response status: ${response.status}`);
+            const result = await response.json();
+            console.log(result);
+            result.forEach((game) => {
+              console.log(game.name);
+              const li = document.createElement("li");
+              li.innerText = game.name;
+              resDisplay.appendChild(li);
+            });
+            input.value = "";
+          } catch (error) {
+            console.error(error.message);
+          }
+        }
+      });
+    </script>
   </body>
-  <script>
-    const input = document.querySelector("input");
-    input.addEventListener("keydown", async (event) => {
-      if (event.key === "Enter") {
-        try {
-        const response = await fetch(
-          `/searchgame?q=${encodeURIComponent(query)}`,
-        );
-        if (!response.ok)
-          throw new Error(`Response status: ${response.status}`);
-        const result = await response.json();
-        } catch(error) {
-          console.error(error.message);
-      }
-    });
-  </script>
 </html>

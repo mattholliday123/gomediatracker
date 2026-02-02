@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      body {
+        background-color: Canvas;
+        color: CanvasText;
+        color-scheme: light dark;
+      }
+    </style>
+    <title id="title"></title>
+    <body>
+      <h1 id="headingname"></h1>
+      <p id="summary"></p>
+      <label for="status">Status</label>
+      <select name="status" id="status">
+        <option value="unplayed">Unplayed</option>
+        <option value="played">Played</option>
+      </select>
+      <button type="button">Add</button>
+      <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get("id");
+        const gameName = urlParams.get("name");
+        const gameSummary = urlParams.get("summary");
+        const title = document.getElementById("title");
+        title.innerText = gameName;
+        const heading = document.getElementById("headingname");
+        const summary = document.getElementById("summary");
+        heading.innerText = gameName;
+        summary.innerText = gameSummary;
+
+        //button press
+        const button = document.querySelector("button");
+        const select = document.querySelector("select");
+        button.addEventListener("click", async (event) => {
+          try {
+            const response = await fetch(
+              `/savegame?gameId=${encodeURIComponent(gameId)}&name=${encodeURIComponent(gameName)}&status=${encodeURIComponent(select.value)}`,
+            );
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      </script>
+    </body>
+  </head>
+</html>

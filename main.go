@@ -1,14 +1,16 @@
 package main
 
 import (
+	"database/sql"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/joho/godotenv"
 )
+
 
 //Change status for media
 //func changeStatus()
@@ -23,7 +25,7 @@ func searchgameHandler(w http.ResponseWriter, r *http.Request){
 	clientid := os.Getenv("clientid")
 	auth := os.Getenv("accesstoken")
 	query := r.URL.Query().Get("q")
-	body := "fields name, summary, release_dates.human; search \"" + query +"\"; limit 5;"
+	body := "fields name, summary, release_dates, involved_companies.developer, involved_companies.company.name; search \"" + query +"\"; limit 5;"
 	req, err := http.NewRequest(http.MethodPost, "https://api.igdb.com/v4/games", strings.NewReader(body))
 	req.Header.Set("Client-ID", clientid)
 	req.Header.Set("Authorization", "Bearer " + auth)
@@ -44,7 +46,25 @@ func searchgameHandler(w http.ResponseWriter, r *http.Request){
 	w.Write(resp_body)
 }
 
-//func addGameToCollection()
+//adds game to Database
+func addGameToCollection(w http.ResponseWriter, r *http.Request){
+//id := r.URL.Query().Get("id")
+	name := r.URL.Query().Get("name")
+	status := r.URL.Query().Get("status")
+	date := r.URL.Query().Get("date")
+	studio := r.URL.Query().Get("dev")
+	db, err := sql.Open("sqlite3", "./media")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	_, err = db.Exec("INSERT INTO games(title, year, studio, status) VALUES(?,?,?,?)", name, date, studio, status)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Inserted successfully")
+
+}
 
 /*---books---*/
 //handles searching for book api and display results
@@ -73,12 +93,12 @@ func searchmovieHandler(w http.ResponseWriter, r *http.Request){
 
 //func addMovieToCollection()
 
-
 func main() {
 	http.HandleFunc("/searchgame", searchgameHandler)
 	http.HandleFunc("/searchbook", searchbookHandler)
 	http.HandleFunc("/searchmovie", searchmovieHandler)
 	http.HandleFunc("/searchmmusic", searchmusicHandler)
+	http.HandleFunc("/savegame", addGameToCollection)
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 	log.Fatal(http.ListenAndServe(":8080", nil))

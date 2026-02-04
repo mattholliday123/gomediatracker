@@ -21,14 +21,25 @@
       <script>
         const urlParams = new URLSearchParams(window.location.search);
         const gameId = urlParams.get("id");
-        const gameName = urlParams.get("name");
-        const gameSummary = urlParams.get("summary");
+        const game = JSON.parse(sessionStorage.getItem(`game_${gameId}`));
+        console.log(game);
+
+        console.log(
+          "id: " +
+            game.id +
+            "\ngameName " +
+            game.name +
+            "\ndate: " +
+            game.releaseDate +
+            "\ndev: " +
+            game.developer,
+        );
         const title = document.getElementById("title");
-        title.innerText = gameName;
+        title.innerText = game.name;
         const heading = document.getElementById("headingname");
         const summary = document.getElementById("summary");
-        heading.innerText = gameName;
-        summary.innerText = gameSummary;
+        heading.innerText = game.name;
+        summary.innerText = game.summary;
 
         //button press
         const button = document.querySelector("button");
@@ -36,7 +47,7 @@
         button.addEventListener("click", async (event) => {
           try {
             const response = await fetch(
-              `/savegame?gameId=${encodeURIComponent(gameId)}&name=${encodeURIComponent(gameName)}&status=${encodeURIComponent(select.value)}`,
+              `/savegame?gameId=${encodeURIComponent(gameId)}&name=${encodeURIComponent(gameName)}&date=${encodeURIComponent(gameDate)}&dev=${encodeURIComponent(dev)}&status=${encodeURIComponent(select.value)}`,
             );
           } catch (error) {
             console.log(error);

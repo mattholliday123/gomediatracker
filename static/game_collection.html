@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <title>My Games</title>
+    <script type="module">
+      try {
+        const response = await fetch('/getGames');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const games = await response.json();
+        games.forEach(game => {
+            console.log(game.title);
+        });
+    } catch (error) {
+        console.error('Failed to fetch games:', error);
+    }
+         </script>
+  </head>
+    <body>
+      <h1>Games Collected</h1>
+    </body>
+  </head>
+</html>

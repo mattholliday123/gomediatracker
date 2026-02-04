@@ -2,15 +2,16 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/joho/godotenv"
-)
 
+	"github.com/joho/godotenv"
+	_ "github.com/mattn/go-sqlite3"
+)
 
 //Change status for media
 //func changeStatus()
@@ -25,7 +26,7 @@ func searchgameHandler(w http.ResponseWriter, r *http.Request){
 	clientid := os.Getenv("clientid")
 	auth := os.Getenv("accesstoken")
 	query := r.URL.Query().Get("q")
-	body := "fields name, summary, release_dates, involved_companies.developer, involved_companies.company.name; search \"" + query +"\"; limit 5;"
+	body := "fields name, summary, release_dates.human, release_dates.date, involved_companies.developer, involved_companies.company.name; search \"" + query +"\"; limit 5;"
 	req, err := http.NewRequest(http.MethodPost, "https://api.igdb.com/v4/games", strings.NewReader(body))
 	req.Header.Set("Client-ID", clientid)
 	req.Header.Set("Authorization", "Bearer " + auth)
@@ -63,6 +64,50 @@ func addGameToCollection(w http.ResponseWriter, r *http.Request){
 		log.Fatal(err)
 	}
 	log.Println("Inserted successfully")
+}
+
+
+//get games from db
+func getGames(w http.ResponseWriter, r *http.Request){
+	db, err := sql.Open("sqlite3", "./media")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+ 	rows, err := db.Query("SELECT * FROM games WHERE status=?", "played")
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close() 
+		type Game struct {
+        ID     int    `json:"id"`
+        Title  string `json:"title"`
+				ReleaseDate string `json:"releaseDate"`
+				Developer string `json:"developer"`
+        Status string `json:"status"`
+    }
+    
+    var games []Game
+    
+    // Iterate through rows
+    for rows.Next() {
+        var game Game
+        err := rows.Scan(&game.ID, &game.Title, &game.Status)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+        games = append(games, game)
+    }
+    
+    // Set content type to JSON
+    w.Header().Set("Content-Type", "application/json")
+    
+    // Encode and send the response
+    json.NewEncoder(w).Encode(games)
+
 
 }
 
@@ -99,6 +144,7 @@ func main() {
 	http.HandleFunc("/searchmovie", searchmovieHandler)
 	http.HandleFunc("/searchmmusic", searchmusicHandler)
 	http.HandleFunc("/savegame", addGameToCollection)
+	http.HandleFunc("/getGames", getGames)
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 	log.Fatal(http.ListenAndServe(":8080", nil))

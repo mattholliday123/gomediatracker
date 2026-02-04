@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -75,17 +76,18 @@ func getGames(w http.ResponseWriter, r *http.Request){
 	}
 	defer db.Close()
 
- 	rows, err := db.Query("SELECT * FROM games WHERE status=?", "played")
+ 	rows, err := db.Query("SELECT * FROM games")
     if err != nil {
+				fmt.Printf("error select stmt\n")
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
     defer rows.Close() 
 		type Game struct {
-        ID     int    `json:"id"`
+        //ID     int    `json:"id"`
         Title  string `json:"title"`
-				ReleaseDate string `json:"releaseDate"`
-				Developer string `json:"developer"`
+				ReleaseDate string `json:"year"`
+				Developer string `json:"studio"`
         Status string `json:"status"`
     }
     
@@ -94,8 +96,9 @@ func getGames(w http.ResponseWriter, r *http.Request){
     // Iterate through rows
     for rows.Next() {
         var game Game
-        err := rows.Scan(&game.ID, &game.Title, &game.Status)
+        err := rows.Scan(&game.Title, &game.ReleaseDate, &game.Developer, &game.Status)
         if err != nil {
+						fmt.Printf("error iterate rows \n")
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return
         }

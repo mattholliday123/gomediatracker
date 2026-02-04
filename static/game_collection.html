@@ -2,23 +2,47 @@
 <html>
   <head>
     <title>My Games</title>
+    <style>
+      body {
+        background-color: Canvas;
+        color: CanvasText;
+        color-scheme: light dark;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Games Collected</h1>
+    <ul id="collected"></ul>
     <script type="module">
+      const colDisplay = document.getElementById("collected");
       try {
-        const response = await fetch('/getGames');
+        const response = await fetch("/getGames");
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         const games = await response.json();
-        games.forEach(game => {
-            console.log(game.title);
+        games.forEach((game) => {
+          const li = document.createElement("li");
+          li.innerText =
+            game.title +
+            "|Release Date: " +
+            game.year +
+            "| Developer: " +
+            game.studio +
+            "| Status: " +
+            game.status;
+          colDisplay.appendChild(li);
+          console.log(
+            game.title +
+              "| Developer: " +
+              game.studio +
+              "| Status: " +
+              game.status,
+          );
         });
-    } catch (error) {
-        console.error('Failed to fetch games:', error);
-    }
-         </script>
-  </head>
-    <body>
-      <h1>Games Collected</h1>
-    </body>
-  </head>
+      } catch (error) {
+        console.error("Failed to fetch games:", error);
+      }
+    </script>
+  </body>
 </html>

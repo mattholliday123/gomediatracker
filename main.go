@@ -50,7 +50,7 @@ func searchgameHandler(w http.ResponseWriter, r *http.Request){
 
 //adds game to Database
 func addGameToCollection(w http.ResponseWriter, r *http.Request){
-//id := r.URL.Query().Get("id")
+	id := r.URL.Query().Get("gameId")
 	name := r.URL.Query().Get("name")
 	status := r.URL.Query().Get("status")
 	date := r.URL.Query().Get("date")
@@ -60,7 +60,7 @@ func addGameToCollection(w http.ResponseWriter, r *http.Request){
 		log.Fatal(err)
 	}
 	defer db.Close()
-	_, err = db.Exec("INSERT INTO games(title, year, studio, status) VALUES(?,?,?,?)", name, date, studio, status)
+	_, err = db.Exec("INSERT INTO games(id, title, year, studio, status) VALUES(?,?,?,?,?)",id, name, date, studio, status)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func getGames(w http.ResponseWriter, r *http.Request){
     }
     defer rows.Close() 
 		type Game struct {
-        //ID     int    `json:"id"`
+        ID     int    `json:"id"`
         Title  string `json:"title"`
 				ReleaseDate string `json:"year"`
 				Developer string `json:"studio"`
@@ -96,9 +96,10 @@ func getGames(w http.ResponseWriter, r *http.Request){
     // Iterate through rows
     for rows.Next() {
         var game Game
-        err := rows.Scan(&game.Title, &game.ReleaseDate, &game.Developer, &game.Status)
+        err := rows.Scan(&game.ID, &game.Title, &game.ReleaseDate, &game.Developer, &game.Status)
         if err != nil {
 						fmt.Printf("error iterate rows \n")
+						log.Fatal(err)
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return
         }

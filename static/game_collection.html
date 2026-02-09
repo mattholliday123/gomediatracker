@@ -22,8 +22,26 @@
         }
         const games = await response.json();
         games.forEach((game) => {
+          const dev =
+            game.involved_companies?.find((ic) => ic.developer)?.company
+              ?.name || "Unkown developer";
+          const releaseDate =
+            game.release_dates && game.release_dates.length > 0
+              ? game.release_dates.sort((a, b) => a.date - b.date)[0]?.human ||
+                "TBA"
+              : "TBA";
+          const gameStored = {
+            id: game.id,
+            name: game.name,
+            summary: game.summary,
+            releaseDate: releaseDate,
+            developer: dev,
+          };
+          sessionStorage.setItem(`game_${game.id}`, JSON.stringify(gameStored));
+
+          const a = document.createElement("a");
           const li = document.createElement("li");
-          li.innerText =
+          a.innerText =
             game.title +
             "|Release Date: " +
             game.year +
@@ -31,6 +49,8 @@
             game.studio +
             "| Status: " +
             game.status;
+          a.href = `/game_page.html?id=${encodeURIComponent(game.id)}`;
+          li.appendChild(a);
           colDisplay.appendChild(li);
           console.log(
             game.title +

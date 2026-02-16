@@ -27,7 +27,7 @@ func searchgameHandler(w http.ResponseWriter, r *http.Request){
 	clientid := os.Getenv("clientid")
 	auth := os.Getenv("accesstoken")
 	query := r.URL.Query().Get("q")
-	body := "fields name, summary, release_dates.human, release_dates.date, involved_companies.developer, involved_companies.company.name; search \"" + query +"\"; limit 5;"
+	body := "fields name, summary, release_dates.human, release_dates.date, involved_companies.developer, involved_companies.company.name; search \"" + query +"\"; limit 10;"
 	req, err := http.NewRequest(http.MethodPost, "https://api.igdb.com/v4/games", strings.NewReader(body))
 	req.Header.Set("Client-ID", clientid)
 	req.Header.Set("Authorization", "Bearer " + auth)
@@ -60,7 +60,7 @@ func addGameToCollection(w http.ResponseWriter, r *http.Request){
 		log.Fatal(err)
 	}
 	defer db.Close()
-	_, err = db.Exec("INSERT INTO games(id, title, year, studio, status) VALUES(?,?,?,?,?)",id, name, date, studio, status)
+	_, err = db.Exec("INSERT INTO games(id, title, year, studio, status) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status = excluded.status",id, name, date, studio, status)
 	if err != nil {
 		log.Fatal(err)
 	}

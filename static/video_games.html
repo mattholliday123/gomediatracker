@@ -1,79 +1,210 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>Video Games</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Games - Media Collection</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
-  <style>
-    body {
-      background-color: Canvas;
-      color: CanvasText;
-      color-scheme: light dark;
-    }
-    #viewcollection {
-      margin-bottom: 5px;
-    }
-
-    #search {
-      margin-top: 10px;
-      padding: 5px;
-    }
-  </style>
   <body>
-    <h1>Video Games</h1>
-    <a id="viewcollection" href="game_collection.html">View games</a>
-    <br />
-    <input type="text" id="search" placeholder="Search for Game..." />
-    <ul id="results"></ul>
+    <nav class="nav-bar">
+      <div class="container">
+        <a href="home.html" class="nav-brand">
+          <strong>Media Collection</strong>
+        </a>
+        <ul class="nav-links">
+          <li><a href="all.html">All Media</a></li>
+          <li><a href="books.html">Books</a></li>
+          <li><a href="movies.html">Movies</a></li>
+          <li><a href="music.html">Music</a></li>
+          <li><a href="video_games.html" class="active">Video Games</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="page-header">
+      <div class="container">
+        <h1>Video Games</h1>
+        <p>Search and add games to your collection</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="search-container">
+        <input 
+          type="search" 
+          id="search" 
+          placeholder="Search for a game..." 
+          autocomplete="off"
+        />
+        <span class="search-icon" aria-hidden="true"></span>
+      </div>
+
+      <a href="game_collection.html" class="btn btn-secondary mb-lg">
+        View My Collection
+      </a>
+
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <span style="margin-left: var(--spacing-md);">Searching...</span>
+      </div>
+
+      <ul id="results" class="results-list"></ul>
+
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-state-icon"></div>
+        <h3>No results found</h3>
+        <p>Try searching for a different game</p>
+      </div>
+    </main>
 
     <script>
-      const input = document.querySelector("input");
+      const input = document.getElementById("search");
       const resDisplay = document.getElementById("results");
-      input.addEventListener("keydown", async (event) => {
-        if (event.key === "Enter") {
-          try {
-            const response = await fetch(
-              `/searchgame?q=${encodeURIComponent(input.value)}`,
-            );
-            if (!response.ok)
-              throw new Error(`Response status: ${response.status}`);
-            const result = await response.json();
-            console.log(result);
-            //go through each game
-            result.forEach((game) => {
-              console.log(game.name);
-              //get proper dev and release date
-              const dev =
-                game.involved_companies?.find((ic) => ic.developer)?.company
-                  ?.name || "Unkown developer";
-              const releaseDate =
-                game.release_dates && game.release_dates.length > 0
-                  ? game.release_dates.sort((a, b) => a.date - b.date)[0]
-                      ?.human || "TBA"
-                  : "TBA";
-              //store in object
-              const gameStored = {
-                id: game.id,
-                name: game.name,
-                summary: game.summary,
-                releaseDate: releaseDate,
-                developer: dev,
-              };
-              sessionStorage.setItem(
-                `game_${game.id}`,
-                JSON.stringify(gameStored),
-              );
-              //display
-              const li = document.createElement("li");
-              const a = document.createElement("a");
-              a.href = `/game_page.html?id=${encodeURIComponent(game.id)}`;
-              a.innerText = game.name + " |" + releaseDate + "|" + dev;
-              li.appendChild(a);
-              resDisplay.appendChild(li);
-            });
-            input.value = "";
-          } catch (error) {
-            console.error(error.message);
+      const loadingEl = document.getElementById("loading");
+      const emptyStateEl = document.getElementById("empty-state");
+      let searchTimeout;
+
+      function showLoading() {
+        loadingEl.style.display = "flex";
+        resDisplay.innerHTML = "";
+        emptyStateEl.style.display = "none";
+      }
+
+      function hideLoading() {
+        loadingEl.style.display = "none";
+      }
+
+      function showEmptyState() {
+        emptyStateEl.style.display = "block";
+        resDisplay.innerHTML = "";
+      }
+
+      function createResultItem(game) {
+        const dev =
+          game.involved_companies?.find((ic) => ic.developer)?.company
+            ?.name || "Unknown developer";
+        const releaseDate =
+          game.release_dates && game.release_dates.length > 0
+            ? game.release_dates.sort((a, b) => a.date - b.date)[0]
+                ?.human || "TBA"
+            : "TBA";
+
+        // Store in sessionStorage
+        const gameStored = {
+          id: game.id,
+          name: game.name,
+          summary: game.summary || "No description available",
+          releaseDate: releaseDate,
+          developer: dev,
+        };
+        sessionStorage.setItem(
+          `game_${game.id}`,
+          JSON.stringify(gameStored),
+        );
+
+        // Create result item
+        const li = document.createElement("li");
+        li.className = "result-item fade-in";
+        
+        const a = document.createElement("a");
+        a.href = `/game_page.html?id=${encodeURIComponent(game.id)}`;
+        
+        const title = document.createElement("div");
+        title.className = "result-item-title";
+        title.textContent = game.name;
+        
+        const meta = document.createElement("div");
+        meta.className = "result-item-meta";
+        meta.innerHTML = `
+          <span class="card-meta-item">
+            <span></span>
+            <span>${releaseDate}</span>
+          </span>
+          <span class="card-meta-item">
+            <span></span>
+            <span>${dev}</span>
+          </span>
+        `;
+        
+        if (game.summary) {
+          const summary = document.createElement("p");
+          summary.className = "card-description";
+          summary.textContent = game.summary;
+          a.appendChild(summary);
+        }
+        
+        a.insertBefore(title, a.firstChild);
+        a.appendChild(meta);
+        li.appendChild(a);
+        
+        return li;
+      }
+
+      async function performSearch(query) {
+        if (!query.trim()) {
+          resDisplay.innerHTML = "";
+          emptyStateEl.style.display = "none";
+          return;
+        }
+
+        showLoading();
+
+        try {
+          const response = await fetch(
+            `/searchgame?q=${encodeURIComponent(query)}`,
+          );
+          
+          if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
           }
+          
+          const result = await response.json();
+          hideLoading();
+
+          if (!result || result.length === 0) {
+            showEmptyState();
+            return;
+          }
+
+          resDisplay.innerHTML = "";
+          result.forEach((game) => {
+            const item = createResultItem(game);
+            resDisplay.appendChild(item);
+          });
+        } catch (error) {
+          hideLoading();
+          console.error(error.message);
+          resDisplay.innerHTML = `
+            <li class="result-item">
+              <div style="color: var(--error);">
+                Error: ${error.message}. Please try again.
+              </div>
+            </li>
+          `;
+        }
+      }
+
+      // Debounced search on input
+      input.addEventListener("input", (event) => {
+        clearTimeout(searchTimeout);
+        const query = event.target.value.trim();
+        
+        if (query.length >= 2) {
+          searchTimeout = setTimeout(() => {
+            performSearch(query);
+          }, 500);
+        } else {
+          resDisplay.innerHTML = "";
+          emptyStateEl.style.display = "none";
+        }
+      });
+
+      // Also search on Enter key
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          clearTimeout(searchTimeout);
+          performSearch(event.target.value);
         }
       });
     </script>

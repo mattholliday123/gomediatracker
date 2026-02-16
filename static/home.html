@@ -1,17 +1,61 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <meta charset utf="utf-8" />
-    <title>Physical Media</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Physical Media Collection</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>My Physical Media Collection</h1>
-    <div class="nav_bar">
-      <a href="all.html">View all</a>
-      <a href="books.html">Books</a>
-      <a href="movies.html">Movies</a>
-      <a href="music.html">Music</a>
-      <a href="video_games.html">Video Games</a>
-    </div>
+    <nav class="nav-bar">
+      <div class="container">
+        <a href="home.html" class="nav-brand">
+          <strong>Media Collection</strong>
+        </a>
+        <ul class="nav-links">
+          <li><a href="all.html">All Media</a></li>
+          <li><a href="books.html">Books</a></li>
+          <li><a href="movies.html">Movies</a></li>
+          <li><a href="music.html">Music</a></li>
+          <li><a href="video_games.html" class="active">Video Games</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="page-header">
+      <div class="container">
+        <h1>My Physical Media Collection</h1>
+        <p>Track and organize your favorite books, movies, music, and video games</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="card-grid">
+        <a href="all.html" class="card fade-in">
+          <div class="card-title">All Media</div>
+          <p class="card-description">View your complete collection across all media types</p>
+        </a>
+        
+        <a href="books.html" class="card fade-in">
+          <div class="card-title">Books</div>
+          <p class="card-description">Manage your book collection and reading list</p>
+        </a>
+        
+        <a href="movies.html" class="card fade-in">
+          <div class="card-title">Movies</div>
+          <p class="card-description">Track your favorite films and watchlist</p>
+        </a>
+        
+        <a href="music.html" class="card fade-in">
+          <div class="card-title">Music</div>
+          <p class="card-description">Organize your music collection</p>
+        </a>
+        
+        <a href="video_games.html" class="card fade-in">
+          <div class="card-title">Video Games</div>
+          <p class="card-description">Search and manage your game collection</p>
+        </a>
+      </div>
+    </main>
   </body>
 </html>

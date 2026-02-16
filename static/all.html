@@ -1,7 +1,56 @@
 <!doctype html>
-<head>
-  <title>All media</title>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Media - Media Collection</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
   <body>
-    <h1>All media</h1>
+    <nav class="nav-bar">
+      <div class="container">
+        <a href="home.html" class="nav-brand">
+          <strong>Media Collection</strong>
+        </a>
+        <ul class="nav-links">
+          <li><a href="all.html" class="active">All Media</a></li>
+          <li><a href="books.html">Books</a></li>
+          <li><a href="movies.html">Movies</a></li>
+          <li><a href="music.html">Music</a></li>
+          <li><a href="video_games.html">Video Games</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="page-header">
+      <div class="container">
+        <h1>All Media</h1>
+        <p>View your complete collection across all media types</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="card-grid">
+        <a href="books.html" class="card fade-in">
+          <div class="card-title">Books</div>
+          <p class="card-description">Manage your book collection</p>
+        </a>
+        
+        <a href="movies.html" class="card fade-in">
+          <div class="card-title">Movies</div>
+          <p class="card-description">Track your favorite films</p>
+        </a>
+        
+        <a href="music.html" class="card fade-in">
+          <div class="card-title">Music</div>
+          <p class="card-description">Organize your music collection</p>
+        </a>
+        
+        <a href="video_games.html" class="card fade-in">
+          <div class="card-title">Video Games</div>
+          <p class="card-description">Search and manage your games</p>
+        </a>
+      </div>
+    </main>
   </body>
-</head>
+</html>

@@ -1,67 +1,125 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>My Games</title>
-    <style>
-      body {
-        background-color: Canvas;
-        color: CanvasText;
-        color-scheme: light dark;
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Games Collection - Media Collection</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>Games Collected</h1>
-    <ul id="collected"></ul>
+    <nav class="nav-bar">
+      <div class="container">
+        <a href="home.html" class="nav-brand">
+          <strong>Media Collection</strong>
+        </a>
+        <ul class="nav-links">
+          <li><a href="all.html">All Media</a></li>
+          <li><a href="books.html">Books</a></li>
+          <li><a href="movies.html">Movies</a></li>
+          <li><a href="music.html">Music</a></li>
+          <li><a href="video_games.html" class="active">Video Games</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="page-header">
+      <div class="container">
+        <h1>My Games Collection</h1>
+        <p>Your saved video games</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <span style="margin-left: var(--spacing-md);">Loading games...</span>
+      </div>
+
+      <ul id="collected" class="collection-list" style="display: none;"></ul>
+
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-state-icon"></div>
+        <h3>No games in your collection yet</h3>
+        <p>Start by searching for games to add</p>
+        <a href="video_games.html" class="btn btn-primary mt-md">Search Games</a>
+      </div>
+    </main>
+
     <script type="module">
       const colDisplay = document.getElementById("collected");
+      const loadingEl = document.getElementById("loading");
+      const emptyStateEl = document.getElementById("empty-state");
+
+      function createCollectionItem(game) {
+        const li = document.createElement("li");
+        li.className = "collection-item fade-in";
+
+        const content = document.createElement("div");
+        content.className = "collection-item-content";
+
+        const title = document.createElement("div");
+        title.className = "collection-item-title";
+        
+        const a = document.createElement("a");
+        a.href = `/game_page.html?id=${encodeURIComponent(game.id)}`;
+        a.textContent = game.title;
+        title.appendChild(a);
+
+        const meta = document.createElement("div");
+        meta.className = "collection-item-meta";
+        meta.innerHTML = `
+          <span class="card-meta-item">
+            <span></span>
+            <span>${game.year || "Unknown"}</span>
+          </span>
+          <span class="card-meta-item">
+            <span></span>
+            <span>${game.studio || "Unknown"}</span>
+          </span>
+        `;
+
+        content.appendChild(title);
+        content.appendChild(meta);
+
+        const statusBadge = document.createElement("span");
+        statusBadge.className = `status-badge status-${game.status || "unplayed"}`;
+        statusBadge.textContent = game.status === "played" ? "Played" : "Unplayed";
+
+        li.appendChild(content);
+        li.appendChild(statusBadge);
+
+        return li;
+      }
+
       try {
         const response = await fetch("/getGames");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const games = await response.json();
-        games.forEach((game) => {
-          const dev =
-            game.involved_companies?.find((ic) => ic.developer)?.company
-              ?.name || "Unkown developer";
-          const releaseDate =
-            game.release_dates && game.release_dates.length > 0
-              ? game.release_dates.sort((a, b) => a.date - b.date)[0]?.human ||
-                "TBA"
-              : "TBA";
-          const gameStored = {
-            id: game.id,
-            name: game.name,
-            summary: game.summary,
-            releaseDate: releaseDate,
-            developer: dev,
-          };
-          sessionStorage.setItem(`game_${game.id}`, JSON.stringify(gameStored));
+        
+        loadingEl.style.display = "none";
 
-          const a = document.createElement("a");
-          const li = document.createElement("li");
-          a.innerText =
-            game.title +
-            "|Release Date: " +
-            game.year +
-            "| Developer: " +
-            game.studio +
-            "| Status: " +
-            game.status;
-          a.href = `/game_page.html?id=${encodeURIComponent(game.id)}`;
-          li.appendChild(a);
-          colDisplay.appendChild(li);
-          console.log(
-            game.title +
-              "| Developer: " +
-              game.studio +
-              "| Status: " +
-              game.status,
-          );
-        });
+        if (!games || games.length === 0) {
+          emptyStateEl.style.display = "block";
+        } else {
+          colDisplay.style.display = "block";
+          games.forEach((game) => {
+            const item = createCollectionItem(game);
+            colDisplay.appendChild(item);
+          });
+        }
       } catch (error) {
+        loadingEl.style.display = "none";
         console.error("Failed to fetch games:", error);
+        colDisplay.innerHTML = `
+          <li class="collection-item">
+            <div style="color: var(--error);">
+              Error loading games: ${error.message}
+            </div>
+          </li>
+        `;
+        colDisplay.style.display = "block";
       }
     </script>
   </body>

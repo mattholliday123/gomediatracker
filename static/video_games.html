@@ -51,6 +51,10 @@
 
       <ul id="results" class="results-list"></ul>
 
+      <div id="see-more-wrap" class="mt-lg" style="display: none; text-align: center;">
+        <button type="button" id="see-more" class="btn btn-secondary">See more</button>
+      </div>
+
       <div id="empty-state" class="empty-state" style="display: none;">
         <div class="empty-state-icon"></div>
         <h3>No results found</h3>
@@ -63,12 +67,18 @@
       const resDisplay = document.getElementById("results");
       const loadingEl = document.getElementById("loading");
       const emptyStateEl = document.getElementById("empty-state");
+      const seeMoreWrap = document.getElementById("see-more-wrap");
+      const seeMoreBtn = document.getElementById("see-more");
+      const PAGE_SIZE = 10;
       let searchTimeout;
+      let lastQuery = "";
+      let currentOffset = 0;
 
       function showLoading() {
         loadingEl.style.display = "flex";
         resDisplay.innerHTML = "";
         emptyStateEl.style.display = "none";
+        seeMoreWrap.style.display = "none";
       }
 
       function hideLoading() {
@@ -78,6 +88,7 @@
       function showEmptyState() {
         emptyStateEl.style.display = "block";
         resDisplay.innerHTML = "";
+        seeMoreWrap.style.display = "none";
       }
 
       function createResultItem(game) {
@@ -141,49 +152,84 @@
         return li;
       }
 
-      async function performSearch(query) {
+      async function performSearch(query, append) {
         if (!query.trim()) {
           resDisplay.innerHTML = "";
           emptyStateEl.style.display = "none";
+          seeMoreWrap.style.display = "none";
           return;
         }
 
-        showLoading();
+        const offset = append ? currentOffset : 0;
+        if (!append) {
+          showLoading();
+          lastQuery = query;
+          currentOffset = 0;
+        } else {
+          seeMoreBtn.disabled = true;
+          seeMoreBtn.textContent = "Loading...";
+        }
 
         try {
           const response = await fetch(
-            `/searchgame?q=${encodeURIComponent(query)}`,
+            `/searchgame?q=${encodeURIComponent(query)}&limit=${PAGE_SIZE}&offset=${offset}`,
           );
-          
+
           if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
           }
-          
+
           const result = await response.json();
           hideLoading();
+          seeMoreBtn.disabled = false;
+          seeMoreBtn.textContent = "See more";
 
           if (!result || result.length === 0) {
-            showEmptyState();
+            if (!append) {
+              showEmptyState();
+            }
+            if (append) {
+              seeMoreWrap.style.display = "none";
+            }
             return;
           }
 
-          resDisplay.innerHTML = "";
+          if (!append) {
+            resDisplay.innerHTML = "";
+          }
           result.forEach((game) => {
             const item = createResultItem(game);
             resDisplay.appendChild(item);
           });
+          currentOffset += result.length;
+
+          if (result.length >= PAGE_SIZE) {
+            seeMoreWrap.style.display = "block";
+          } else {
+            seeMoreWrap.style.display = "none";
+          }
         } catch (error) {
           hideLoading();
+          seeMoreBtn.disabled = false;
+          seeMoreBtn.textContent = "See more";
           console.error(error.message);
-          resDisplay.innerHTML = `
-            <li class="result-item">
-              <div style="color: var(--error);">
-                Error: ${error.message}. Please try again.
-              </div>
-            </li>
-          `;
+          if (!append) {
+            resDisplay.innerHTML = `
+              <li class="result-item">
+                <div style="color: var(--error);">
+                  Error: ${error.message}. Please try again.
+                </div>
+              </li>
+            `;
+          }
+          seeMoreWrap.style.display = "none";
         }
       }
+
+      seeMoreBtn.addEventListener("click", () => {
+        if (!lastQuery.trim()) return;
+        performSearch(lastQuery, true);
+      });
 
       // Debounced search on input
       input.addEventListener("input", (event) => {

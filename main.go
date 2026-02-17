@@ -8,18 +8,28 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// logger is middleware that logs each request: method, path, remote addr, and duration.
+func logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		log.Printf("%s %s %s %s", r.Method, r.URL.Path, r.RemoteAddr, time.Since(start))
+	})
+}
 //Change status for media
 //func changeStatus()
 
 /*---Video Games---*/
-//handles searching for game api and display results
-func searchgameHandler(w http.ResponseWriter, r *http.Request){
+//handles searching for game api and display results; supports limit and offset for "see more"
+func searchgameHandler(w http.ResponseWriter, r *http.Request) {
 	err := godotenv.Load("keys.env")
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -27,7 +37,19 @@ func searchgameHandler(w http.ResponseWriter, r *http.Request){
 	clientid := os.Getenv("clientid")
 	auth := os.Getenv("accesstoken")
 	query := r.URL.Query().Get("q")
-	body := "fields name, summary, release_dates.human, release_dates.date, involved_companies.developer, involved_companies.company.name; search \"" + query +"\"; limit 10;"
+	limitNum := 10
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if n, err := strconv.Atoi(l); err == nil && n >= 1 && n <= 50 {
+			limitNum = n
+		}
+	}
+	offsetNum := 0
+	if o := r.URL.Query().Get("offset"); o != "" {
+		if n, err := strconv.Atoi(o); err == nil && n >= 0 {
+			offsetNum = n
+		}
+	}
+	body := "fields name, summary, release_dates.human, release_dates.date, involved_companies.developer, involved_companies.company.name; search \"" + query + "\"; limit " + strconv.Itoa(limitNum) + "; offset " + strconv.Itoa(offsetNum) + ";"
 	req, err := http.NewRequest(http.MethodPost, "https://api.igdb.com/v4/games", strings.NewReader(body))
 	req.Header.Set("Client-ID", clientid)
 	req.Header.Set("Authorization", "Bearer " + auth)
@@ -143,13 +165,13 @@ func searchmovieHandler(w http.ResponseWriter, r *http.Request){
 //func addMovieToCollection()
 
 func main() {
-	http.HandleFunc("/searchgame", searchgameHandler)
-	http.HandleFunc("/searchbook", searchbookHandler)
-	http.HandleFunc("/searchmovie", searchmovieHandler)
-	http.HandleFunc("/searchmmusic", searchmusicHandler)
-	http.HandleFunc("/savegame", addGameToCollection)
-	http.HandleFunc("/getGames", getGames)
+	http.Handle("/searchgame", logger(http.HandlerFunc(searchgameHandler)))
+	http.Handle("/searchbook", logger(http.HandlerFunc(searchbookHandler)))
+	http.Handle("/searchmovie", logger(http.HandlerFunc(searchmovieHandler)))
+	http.Handle("/searchmmusic", logger(http.HandlerFunc(searchmusicHandler)))
+	http.Handle("/savegame", logger(http.HandlerFunc(addGameToCollection)))
+	http.Handle("/getGames", logger(http.HandlerFunc(getGames)))
 	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fs)
+	http.Handle("/", logger(fs))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
